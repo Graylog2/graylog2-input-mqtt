@@ -48,10 +48,11 @@ public class MQTTTransport implements Transport {
     private static final String CK_PASSWORD = "password";
     private static final String CK_USERNAME = "username";
     private static final String CK_USE_AUTH = "useAuth";
+    private static final String CK_CLEINT_ID = "clientID";
 
     private final Configuration configuration;
     private final MetricRegistry metricRegistry;
-    private final String clientId;
+    private String clientId;
     private ServerStatus serverStatus;
     private MqttClient client;
     private List<String> topics;
@@ -64,7 +65,6 @@ public class MQTTTransport implements Transport {
         this.configuration = configuration;
         this.metricRegistry = metricRegistry;
         this.serverStatus = serverStatus;
-        this.clientId = "graylog2_" + Hashing.murmur3_32().hashUnencodedChars(this.serverStatus.getNodeId().toString()).toString();
     }
 
     @Override
@@ -84,6 +84,8 @@ public class MQTTTransport implements Transport {
 
         final ConnectReturnCode returnCode;
         try {
+            this.clientId = configuration.getString(CK_CLEINT_ID)
+                + Hashing.murmur3_32().hashUnencodedChars(this.serverStatus.getNodeId().toString()).toString();
             if (configuration.getBoolean(CK_USE_AUTH)) {
                 final String username = configuration.getString(CK_USERNAME);
                 final String password = configuration.getString(CK_PASSWORD);
@@ -175,6 +177,11 @@ public class MQTTTransport implements Transport {
                     "Broker URL",
                     "tcp://localhost:1883",
                     "This is the URL of the MQTT broker."));
+
+            cr.addField(new TextField(CK_CLEINT_ID,
+                    "Client ID Prefix",
+                    "graylog2_",
+                    "This is the prefix of Clien ID field"));
 
             cr.addField(new BooleanField(CK_USE_AUTH,
                     "Use Authentication",
